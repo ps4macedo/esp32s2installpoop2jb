@@ -378,7 +378,7 @@ class InstallerUi {
     this.modalTitle.textContent = "Instalação concluída";
     this.modalBody.innerHTML = `
       <p>Host PSM instalado.</p>
-      <p>A ESP32-S2 está pronta para uso.</p>
+      <p>Para iniciar o Host PSM, reinicie a ESP32-S2 uma vez.</p>
       <p><strong>No PS5:</strong><br>Wi-Fi: <strong>HostPSM</strong><br>DNS: <strong>10.1.1.1</strong><br>Abra o <strong>Guia do Usuário</strong></p>
     `;
     this.modalPrimary.hidden = false;
@@ -549,8 +549,10 @@ class HostPsmSerialFlasher {
       writtenBytes += part.bytes.length;
     }
 
-    this.ui.updateProgress(0.98, "Finalizando e reiniciando a ESP32-S2.");
-    await this.command(ROM.flashEnd, u32Packet([0]), 0, 10000);
+    this.ui.updateProgress(0.98, "Finalizando gravação.");
+    // Mantem a ESP32-S2 no bootloader: reboot automatico via Web Serial pode
+    // derrubar/recriar a porta USB e travar o Chrome em algumas placas.
+    await this.command(ROM.flashEnd, u32Packet([1]), 0, 10000);
     await letBrowserBreathe(500);
     this.ui.updateProgress(1, "Instalação concluída.");
   }
