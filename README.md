@@ -1,9 +1,12 @@
-# Host PSM ESP32-S2 — Web Installer
+# Host PSM • ESP32-S2
 
-O gerador publica somente os quatro binarios reais do build HostPSM nos offsets validados.
-A NVS nao e incluida nem apagada pelo manifesto.
+Web Installer do Host PSM para ESP32-S2.
 
-A interface usa uma copia local validada do ESP Web Tools em `vendor/`.
-Os textos do componente sao localizados para PT-BR durante a preparacao do runtime, antes da publicacao.
-Nao existe interceptacao de Shadow DOM, `attachShadow`, `MutationObserver` ou alteracao do fluxo serial em runtime.
-A janela de escolha da porta COM continua sendo a janela nativa de seguranca do navegador.
+- PS5 FW 12.02–12.70
+- firmware gerado diretamente pelo build validado do projeto
+- quatro componentes nos mesmos offsets usados pela gravação local
+- sem dump da ESP32-S2
+- sem arquivo artificial de 4 MiB
+- NVS não é incluída no manifesto
+- instalador local em JavaScript, sem CDN e sem ESP Web Tools remoto
+- telas controladas pelo Host PSM em português; seletor de porta serial é nativo do navegador
