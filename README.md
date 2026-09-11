@@ -5,8 +5,7 @@ Web Installer do Host PSM para ESP32-S2.
 - PS5 FW 12.02–12.70
 - firmware gerado diretamente pelo build validado do projeto
 - quatro componentes nos mesmos offsets usados pela gravação local
+- ESP Web Tools oficial empacotado localmente
 - sem dump da ESP32-S2
 - sem arquivo artificial de 4 MiB
 - NVS não é incluída no manifesto
-- instalador local em JavaScript, sem CDN e sem ESP Web Tools remoto
-- telas controladas pelo Host PSM em português; seletor de porta serial é nativo do navegador
