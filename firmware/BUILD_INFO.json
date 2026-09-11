@@ -1,0 +1,30 @@
+{
+  "target": "ESP32-S2",
+  "physical_flash_bytes": 4194304,
+  "published_binary_bytes": 3324448,
+  "not_published_bytes_vs_4MiB": 869856,
+  "nvs_in_manifest": false,
+  "nvs_range": "0x9000-0xDFFF",
+  "parts": [
+    {
+      "file": "bootloader.bin",
+      "bytes": 14720,
+      "sha256": "0b49d993df8be7cda46aba5f084ae0f0b3e8996515143383d9cce916af0545d7"
+    },
+    {
+      "file": "partitions.bin",
+      "bytes": 3072,
+      "sha256": "506f27facf40db164276cb5ceb95fb5d4144b6418077cbda3d2940d920ef2110"
+    },
+    {
+      "file": "boot_app0.bin",
+      "bytes": 8192,
+      "sha256": "f94c5d786a7a8fab06ac5d10e33bf37711a6697636dc037559ea19cc410a17f0"
+    },
+    {
+      "file": "HostPSM_ESP32S2.bin",
+      "bytes": 3298464,
+      "sha256": "ae336b3bf78905156e91425a01b197ca7ce20333222cbe7d0fc66efb28cd667f"
+    }
+  ]
+}
