@@ -345,8 +345,15 @@ class InstallerUi {
   }
 
   async showDone() {
-    this.modalTitle.textContent = "Instalação concluída";
-    this.modalBody.innerHTML = "<p>Host PSM ESP32-S2 gravado com sucesso.</p><p>Ao reiniciar, conecte no Wi-Fi HostPSM e use o host normalmente.</p>";
+    this.modalTitle.textContent = "Host PSM instalado";
+    this.modalBody.innerHTML = `
+      <p>Pronto: o Host PSM foi instalado na sua ESP32-S2.</p>
+      <ol class="stepsList">
+        <li>Mantenha a ESP32-S2 ligada perto do PS5. Ela pode continuar no PC se o PS5 alcançar o Wi-Fi HostPSM.</li>
+        <li>Se preferir, desconecte do PC e alimente a ESP32-S2 pela USB do PS5 ou por uma fonte USB.</li>
+        <li>No PS5, conecte na rede Wi-Fi HostPSM. Se configurar DNS manualmente, use 10.1.1.1 e abra o Guia do Usuário.</li>
+      </ol>
+    `;
     this.modalPrimary.hidden = false;
     this.modalSecondary.hidden = true;
     this.modalClose.hidden = false;
@@ -561,7 +568,7 @@ async function loadManifest() {
   }
   const parts = Array.isArray(builds[0].parts) ? builds[0].parts : [];
   if (!parts.length) {
-    throw new Error("O manifesto ainda não possui firmware. Execute GERAR_HOST_INSTALLER.bat antes de publicar.");
+    throw new Error("Este instalador ainda não recebeu os arquivos de firmware. Execute GERAR_HOST_INSTALLER.bat antes de publicar.");
   }
   const normalizedParts = parts.map((part) => {
     if (!part || typeof part.path !== "string" || !Number.isInteger(part.offset)) {
@@ -607,12 +614,12 @@ async function runInstall(ui) {
       throw new Error("Web Serial exige HTTPS ou localhost. Publique no GitHub Pages ou execute em servidor local seguro.");
     }
     const manifest = await loadManifest();
-    const totalParts = manifest.parts.length;
     const choice = await ui.showChoice({
-      title: "Confirmar instalação",
+      title: "Instalar Host PSM na ESP32-S2",
       body: `
-        <p>Deseja instalar <strong>${escapeHtml(manifest.name)} ${escapeHtml(manifest.version)}</strong>?</p>
-        <p>Serão gravados somente os ${totalParts} componentes do manifesto aprovado. A NVS não será apagada.</p>
+        <p>Este procedimento vai instalar o <strong>Host PSM ${escapeHtml(manifest.version)}</strong> na sua <strong>ESP32-S2</strong>.</p>
+        <p>Depois disso, a placa cria a rede Wi-Fi <strong>HostPSM</strong> para o PS5 carregar o host pelo Guia do Usuário.</p>
+        <p>Mantenha a ESP32-S2 conectada ao PC por USB até a instalação terminar.</p>
       `,
       primary: "Instalar",
       secondary: "Cancelar",
