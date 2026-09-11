@@ -345,14 +345,11 @@ class InstallerUi {
   }
 
   async showDone() {
-    this.modalTitle.textContent = "Host PSM instalado";
+    this.modalTitle.textContent = "Instalação concluída";
     this.modalBody.innerHTML = `
-      <p>Pronto: o Host PSM foi instalado na sua ESP32-S2.</p>
-      <ol class="stepsList">
-        <li>Mantenha a ESP32-S2 ligada perto do PS5. Ela pode continuar no PC se o PS5 alcançar o Wi-Fi HostPSM.</li>
-        <li>Se preferir, desconecte do PC e alimente a ESP32-S2 pela USB do PS5 ou por uma fonte USB.</li>
-        <li>No PS5, conecte na rede Wi-Fi HostPSM. Se configurar DNS manualmente, use 10.1.1.1 e abra o Guia do Usuário.</li>
-      </ol>
+      <p>Host PSM instalado.</p>
+      <p>A ESP32-S2 está pronta para uso.</p>
+      <p><strong>No PS5:</strong><br>Wi-Fi: <strong>HostPSM</strong><br>DNS: <strong>10.1.1.1</strong><br>Abra o <strong>Guia do Usuário</strong></p>
     `;
     this.modalPrimary.hidden = false;
     this.modalSecondary.hidden = true;
@@ -617,9 +614,8 @@ async function runInstall(ui) {
     const choice = await ui.showChoice({
       title: "Instalar Host PSM na ESP32-S2",
       body: `
-        <p>Este procedimento vai instalar o <strong>Host PSM ${escapeHtml(manifest.version)}</strong> na sua <strong>ESP32-S2</strong>.</p>
-        <p>Depois disso, a placa cria a rede Wi-Fi <strong>HostPSM</strong> para o PS5 carregar o host pelo Guia do Usuário.</p>
-        <p>Mantenha a ESP32-S2 conectada ao PC por USB até a instalação terminar.</p>
+        <p>Instalar <strong>Host PSM ${escapeHtml(manifest.version)}</strong> nesta ESP32-S2?</p>
+        <p>Mantenha a ESP32-S2 conectada ao computador até terminar.</p>
       `,
       primary: "Instalar",
       secondary: "Cancelar",
