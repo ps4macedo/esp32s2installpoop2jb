@@ -18,7 +18,7 @@ import{w as e,y as t,a as o,_ as i,t as l,i as n,x as a}from"./styles-sT2V1cOw.j
     </g>
   </svg>
 `;let r=class extends n{render(){const e=(()=>{var e,t;const o=window.navigator.userAgent,i=(null===(t=null===(e=window.navigator)||void 0===e?void 0:e.userAgentData)||void 0===t?void 0:t.platform)||window.navigator.platform;return-1!==["macOS","Macintosh","MacIntel","MacPPC","Mac68K"].indexOf(i)?"Mac OS":-1!==["iPhone","iPad","iPod"].indexOf(i)?"iOS":-1!==["Win32","Win64","Windows","WinCE"].indexOf(i)?"Windows":/Android/.test(o)?"Android":/Linux/.test(i)?"Linux":null})();return a`
-      <ew-dialog open @closed=${this._handleClose}>
+      <ew-dialog open @closed=${this._handleFechar}>
         <div slot="headline">No port selected</div>
         <div slot="content">
           <div>
@@ -103,16 +103,16 @@ import{w as e,y as t,a as o,_ as i,t as l,i as n,x as a}from"./styles-sT2V1cOw.j
         </div>
         <div slot="actions">
           ${this.doTryAgain?a`
-                <ew-text-button @click=${this.close}>Cancel</ew-text-button>
+                <ew-text-button @click=${this.close}>Cancelar</ew-text-button>
                 <ew-text-button @click=${this.tryAgain}>
                   Try Again
                 </ew-text-button>
               `:a`
-                <ew-text-button @click=${this.close}>Close</ew-text-button>
+                <ew-text-button @click=${this.close}>Fechar</ew-text-button>
               `}
         </div>
       </ew-dialog>
-    `}tryAgain(){var e;this.close(),null===(e=this.doTryAgain)||void 0===e||e.call(this)}close(){this.shadowRoot.querySelector("ew-dialog").close()}async _handleClose(){this.parentNode.removeChild(this)}};r.styles=[t,o`
+    `}tryAgain(){var e;this.close(),null===(e=this.doTryAgain)||void 0===e||e.call(this)}close(){this.shadowRoot.querySelector("ew-dialog").close()}async _handleFechar(){this.parentNode.removeChild(this)}};r.styles=[t,o`
       li + li,
       li > ul {
         margin-top: 8px;

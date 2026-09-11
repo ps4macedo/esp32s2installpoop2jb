@@ -1,8 +1,25 @@
 {
+  "schema": 3,
   "source": "https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module",
   "resolved_entry": "https://unpkg.com/esp-web-tools@10.4.0/dist/web/install-button.js?module",
   "entry": "install-button.js",
   "runtime_external_modules": false,
+  "runtime_shadow_dom_patch": false,
+  "localization": "pt-BR-build-time",
+  "localization_counts": {
+    "Logs & Console": 2,
+    "Confirm Installation": 1,
+    "All data on the device will be erased.": 1,
+    "Back": 8,
+    "Install": 22,
+    "Close": 31,
+    "Erase device": 2,
+    "Connecting...": 1,
+    "Failed to connect": 1,
+    "Console": 2,
+    "Logs": 6,
+    "Cancel": 1
+  },
   "files": [
     {
       "path": "install-button.js",
@@ -106,8 +123,8 @@
     },
     {
       "path": "modules/db73733973ef95ba961db179.js",
-      "bytes": 310721,
-      "sha256": "74928a524d45bd9d33699088fd159d58785a7172805cfc7a6be242c4d7851fa5"
+      "bytes": 310809,
+      "sha256": "729d1be82a86965bd1c9e107d44c081d7ba412776c9e6b890790a2ad0e19ebdf"
     },
     {
       "path": "modules/e08575d8606e5bf4cb48fbd5.js",
@@ -121,8 +138,8 @@
     },
     {
       "path": "modules/e8d7db0dd42f41cfe59d24ec.js",
-      "bytes": 6170,
-      "sha256": "50dce2dae1cdf14799b1e5286ce8f9f77b9f0f1d43e0fbd388b263b71a5ada28"
+      "bytes": 6175,
+      "sha256": "cf605240fc171feacf54ca8acb11a1c7cf15b3f8e066176bf24987a558508adc"
     },
     {
       "path": "modules/fa90dbd57f91d526c8e92894.js",
