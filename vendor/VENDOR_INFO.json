@@ -1,0 +1,133 @@
+{
+  "source": "https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module",
+  "resolved_entry": "https://unpkg.com/esp-web-tools@10.4.0/dist/web/install-button.js?module",
+  "entry": "install-button.js",
+  "runtime_external_modules": false,
+  "files": [
+    {
+      "path": "install-button.js",
+      "bytes": 2842,
+      "sha256": "6c2597965ea09bf59152b4be85a8c1f7db119107e0f53247047bfbcbc77e5f0b"
+    },
+    {
+      "path": "modules/02711bfd587a6046a0c7c4e6.js",
+      "bytes": 5617,
+      "sha256": "6e7ebba4576f63dcf7cc53aba38db5b446552321e9b0062c8f63b5b2fe397824"
+    },
+    {
+      "path": "modules/0b9648afeaa468a30e22bca3.js",
+      "bytes": 5354,
+      "sha256": "1fa5914267e8899936e1a6da1225617b207ecb15e8c18fb6aacbf895a419b185"
+    },
+    {
+      "path": "modules/0c4f1057b8170bb1707404a7.js",
+      "bytes": 5502,
+      "sha256": "7720d8b83e696520fa80e46829b0e5aa6ea88596dee6d448a5b1d8d8fef55715"
+    },
+    {
+      "path": "modules/19022e5e7532e59b1cdb97d2.js",
+      "bytes": 5502,
+      "sha256": "8c936767aafb82e5e1e61cc965ace311f89182b1335737f1cd3bf2ac7573f014"
+    },
+    {
+      "path": "modules/1a6058fd67a35fd1ae267b2d.js",
+      "bytes": 6374,
+      "sha256": "61bf5c06933184007050bb9fa6c93d0577e42208b5212cda7e806ac614b0e14a"
+    },
+    {
+      "path": "modules/22ef97b81a6f835c65f0aaeb.js",
+      "bytes": 5606,
+      "sha256": "3f37f501942572fdec58c8cc3550ad558c931a9469b3e65fb88c9b016c1a39a7"
+    },
+    {
+      "path": "modules/2348e5fdeec3feef176ee162.js",
+      "bytes": 7014,
+      "sha256": "221fa5ffb15094c439ee4dcb53157b3f7cd1dec7383297a6185b1d1b5cd60a9f"
+    },
+    {
+      "path": "modules/4c98ef75a86877ebdd6f8793.js",
+      "bytes": 2773,
+      "sha256": "45e0f84a92ce6bb952c2f3ff881a6a08ed1f0d27e0ab3a258b595f8d38b40e08"
+    },
+    {
+      "path": "modules/523489998c00c28935a7440e.js",
+      "bytes": 8913,
+      "sha256": "1bdf86839f9c9436851abc691b1fccffab10bf0ae9b4a003aba90cb8fb82a145"
+    },
+    {
+      "path": "modules/66548adf3c26d6ff9c5bb871.js",
+      "bytes": 7470,
+      "sha256": "d032d82b4188867dd2951b1f02bd5bcf8a7669e16184bbda87b67b757d7ec352"
+    },
+    {
+      "path": "modules/6a831a3aae5dc65810e79e7d.js",
+      "bytes": 3889,
+      "sha256": "ef5bd7b4fbbdc8ec413acfdd846b2ffcbfa4aa3c3c511f45a91aebe6a3d5062f"
+    },
+    {
+      "path": "modules/6b192d74584cb89b90496220.js",
+      "bytes": 7678,
+      "sha256": "fcf4cb2317525fd942210df8be84064b631ffe208f11aec81b53c8ccb6e359e2"
+    },
+    {
+      "path": "modules/77b45b0d8eb1efef826f8fb9.js",
+      "bytes": 4954,
+      "sha256": "dae20b50bc4b5d54982204fd86f7aace42c8e2a0953938e0fe3516fc544a4cd2"
+    },
+    {
+      "path": "modules/83e0d0009418ae31527bb6d0.js",
+      "bytes": 2049,
+      "sha256": "d383c190e7666592235f6e8be7b61e0ea2b6efde1322406b32c3cab7beb1baa3"
+    },
+    {
+      "path": "modules/93c7b3ae68496098c6d68636.js",
+      "bytes": 2460,
+      "sha256": "2d393daffe453bfe4605df490e430e14e4bef3fe20ea28ffc5f09255b51e2ebd"
+    },
+    {
+      "path": "modules/96747becbe7896385686d43d.js",
+      "bytes": 7622,
+      "sha256": "7c05cb1dc75da8ebca5199e53de474e037f82ce5bf1978330a35354e40e87494"
+    },
+    {
+      "path": "modules/998fdf65689d4c4bb7c621fc.js",
+      "bytes": 2194,
+      "sha256": "575644ef1b42c2e9aa484e2c68a4d7377d40c5b5dc718b2265736b50a6209000"
+    },
+    {
+      "path": "modules/cb0bfccd3a8f8bd535ddc5ad.js",
+      "bytes": 5150,
+      "sha256": "57581b04181316599594acb500b7a36316e9861f244508fb3c9efe0ccad9f27e"
+    },
+    {
+      "path": "modules/cd81611923a551202f7be4e9.js",
+      "bytes": 5502,
+      "sha256": "a6724fc931e0bb9153c9b104cfe128b66ab0e71e405c10d529951debb31387d8"
+    },
+    {
+      "path": "modules/db73733973ef95ba961db179.js",
+      "bytes": 310721,
+      "sha256": "74928a524d45bd9d33699088fd159d58785a7172805cfc7a6be242c4d7851fa5"
+    },
+    {
+      "path": "modules/e08575d8606e5bf4cb48fbd5.js",
+      "bytes": 3100,
+      "sha256": "f2c2956725d1b8bf875b365ab28ee29a118d13d3c608714d1feeca0f90224f0f"
+    },
+    {
+      "path": "modules/e0afa1838f9a785a2ce9bc10.js",
+      "bytes": 3430,
+      "sha256": "4e91b326012ad97e8bbb99a3b869b53e964e57bfe5be1d109617365814989331"
+    },
+    {
+      "path": "modules/e8d7db0dd42f41cfe59d24ec.js",
+      "bytes": 6170,
+      "sha256": "50dce2dae1cdf14799b1e5286ce8f9f77b9f0f1d43e0fbd388b263b71a5ada28"
+    },
+    {
+      "path": "modules/fa90dbd57f91d526c8e92894.js",
+      "bytes": 12254,
+      "sha256": "7ca214be908aacff37fd937188f55042c9aeae8af30da7141d634ef68778fc79"
+    }
+  ]
+}
