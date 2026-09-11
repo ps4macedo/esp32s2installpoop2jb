@@ -17,6 +17,30 @@ const SLIP_ESC_ESC = 0xdd;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+function nextBrowserPaint() {
+  if (typeof requestAnimationFrame !== "function") {
+    return sleep(0);
+  }
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => setTimeout(resolve, 0));
+  });
+}
+
+async function letBrowserBreathe(delayMs = 0) {
+  if (delayMs > 0) {
+    await sleep(delayMs);
+  }
+  await nextBrowserPaint();
+}
+
+function withTimeout(promise, timeoutMs, message) {
+  let timer = null;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), timeoutMs);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 function alignUp(value, alignment) {
   return Math.ceil(value / alignment) * alignment;
 }
@@ -395,8 +419,15 @@ class HostPsmSerialFlasher {
   async openPort() {
     this.ui.updateProgress(0.08, "Selecione a porta serial da ESP32-S2.");
     this.port = await navigator.serial.requestPort();
+    this.ui.updateProgress(0.09, "Porta selecionada. Preparando comunicação.");
+    await letBrowserBreathe(350);
     this.ui.log("Porta selecionada.");
-    await this.port.open({ baudRate: INITIAL_BAUD, bufferSize: 65536 });
+    await withTimeout(
+      this.port.open({ baudRate: INITIAL_BAUD, bufferSize: 65536 }),
+      5000,
+      "tempo esgotado ao abrir a porta serial"
+    );
+    await letBrowserBreathe(150);
     this.ui.log(`Conectado a ${INITIAL_BAUD} bps.`);
     this.reader = this.port.readable.getReader();
     this.writer = this.port.writable.getWriter();
@@ -463,7 +494,11 @@ class HostPsmSerialFlasher {
 
   async command(command, payload = new Uint8Array(), checksum = 0, timeoutMs = 4000) {
     this.slip.clear();
-    await this.writer.write(slipEncode(makePacket(command, payload, checksum)));
+    await withTimeout(
+      this.writer.write(slipEncode(makePacket(command, payload, checksum))),
+      timeoutMs,
+      "tempo esgotado ao enviar dados para a ESP32-S2"
+    );
     const response = await this.slip.waitFor(command, timeoutMs);
     const error = command === ROM.sync ? "" : responseStatusError(response);
     if (error) {
@@ -526,8 +561,11 @@ class HostPsmSerialFlasher {
       const payload = concatBytes([header, block]);
       await this.command(ROM.flashData, payload, flashChecksum(block), 8000);
       written += end - start;
-      const ratio = 0.18 + ((writtenBytes + written) / totalBytes) * 0.78;
-      this.ui.updateProgress(ratio, `Gravando ${part.path} (${Math.round((written / part.bytes.length) * 100)}%).`);
+      if (sequence % 16 === 0 || sequence + 1 === blockCount) {
+        const ratio = 0.18 + ((writtenBytes + written) / totalBytes) * 0.78;
+        this.ui.updateProgress(ratio, `Gravando ${part.path} (${Math.round((written / part.bytes.length) * 100)}%).`);
+        await letBrowserBreathe();
+      }
     }
   }
 
@@ -597,6 +635,7 @@ async function loadFirmwareParts(ui, parts) {
     if (!bytes.length) {
       throw new Error(`arquivo de firmware vazio: ${part.path}`);
     }
+    await letBrowserBreathe();
     total += bytes.length;
     loaded.push({ ...part, bytes });
   }
