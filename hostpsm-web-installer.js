@@ -10,6 +10,12 @@ const CHIP_FAMILY = "ESP32-S2";
 const INITIAL_BAUD = 115200;
 const FLASH_BLOCK_SIZE = 0x400;
 const FLASH_SECTOR_SIZE = 0x1000;
+const SERIAL_FILTERS = [
+  { usbVendorId: 0x303a },
+  { usbVendorId: 0x10c4 },
+  { usbVendorId: 0x1a86 },
+  { usbVendorId: 0x0403 },
+];
 const SLIP_END = 0xc0;
 const SLIP_ESC = 0xdb;
 const SLIP_ESC_END = 0xdc;
@@ -418,7 +424,7 @@ class HostPsmSerialFlasher {
 
   async openPort() {
     this.ui.updateProgress(0.08, "Selecione a porta serial da ESP32-S2.");
-    this.port = await navigator.serial.requestPort();
+    this.port = await navigator.serial.requestPort({ filters: SERIAL_FILTERS });
     this.ui.updateProgress(0.09, "Porta selecionada. Preparando comunicação.");
     await letBrowserBreathe(350);
     this.ui.log("Porta selecionada.");
@@ -457,41 +463,6 @@ class HostPsmSerialFlasher {
     }
   }
 
-  async setSignals(signals) {
-    if (this.port && this.port.setSignals) {
-      await this.port.setSignals(signals);
-    }
-  }
-
-  async resetToBootloader(sequence) {
-    if (sequence === 0) {
-      await this.setSignals({ dataTerminalReady: false, requestToSend: false });
-      await sleep(50);
-      await this.setSignals({ dataTerminalReady: false, requestToSend: true });
-      await sleep(100);
-      await this.setSignals({ dataTerminalReady: true, requestToSend: false });
-      await sleep(100);
-      await this.setSignals({ dataTerminalReady: false, requestToSend: false });
-      await sleep(650);
-    } else {
-      await this.setSignals({ dataTerminalReady: true, requestToSend: true });
-      await sleep(100);
-      await this.setSignals({ dataTerminalReady: false, requestToSend: true });
-      await sleep(100);
-      await this.setSignals({ dataTerminalReady: true, requestToSend: false });
-      await sleep(100);
-      await this.setSignals({ dataTerminalReady: false, requestToSend: false });
-      await sleep(850);
-    }
-  }
-
-  async resetToRun() {
-    await this.setSignals({ dataTerminalReady: false, requestToSend: true });
-    await sleep(120);
-    await this.setSignals({ dataTerminalReady: false, requestToSend: false });
-    await sleep(350);
-  }
-
   async command(command, payload = new Uint8Array(), checksum = 0, timeoutMs = 4000) {
     this.slip.clear();
     await withTimeout(
@@ -523,18 +494,15 @@ class HostPsmSerialFlasher {
     throw new Error("não foi possível sincronizar com o bootloader da ESP32-S2");
   }
 
-  async enterBootloader() {
-    for (let sequence = 0; sequence < 2; sequence += 1) {
-      this.ui.updateProgress(0.12, "Entrando no modo de gravação.");
-      await this.resetToBootloader(sequence);
-      try {
-        await this.sync();
-        return;
-      } catch (error) {
-        this.ui.log(`Tentativa ${sequence + 1}: ${error.message}`);
-      }
+  async verifyBootloader() {
+    this.ui.updateProgress(0.12, "Verificando comunicação com a ESP32-S2.");
+    try {
+      await this.sync();
+      return;
+    } catch (error) {
+      this.ui.log(error.message);
     }
-    throw new Error("A ESP32-S2 não respondeu em modo de gravação. Se necessário, segure BOOT ao conectar e tente novamente.");
+    throw new Error("A ESP32-S2 não respondeu para gravação. Feche programas que usam a porta, coloque a placa em modo BOOT e tente novamente.");
   }
 
   async attachFlash() {
@@ -571,7 +539,7 @@ class HostPsmSerialFlasher {
 
   async flash(parts) {
     await this.openPort();
-    await this.enterBootloader();
+    await this.verifyBootloader();
     await this.attachFlash();
 
     const totalBytes = parts.reduce((sum, part) => sum + part.bytes.length, 0);
@@ -583,7 +551,7 @@ class HostPsmSerialFlasher {
 
     this.ui.updateProgress(0.98, "Finalizando e reiniciando a ESP32-S2.");
     await this.command(ROM.flashEnd, u32Packet([0]), 0, 10000);
-    await this.resetToRun();
+    await letBrowserBreathe(500);
     this.ui.updateProgress(1, "Instalação concluída.");
   }
 }
