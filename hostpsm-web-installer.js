@@ -10,42 +10,12 @@ const CHIP_FAMILY = "ESP32-S2";
 const INITIAL_BAUD = 115200;
 const FLASH_BLOCK_SIZE = 0x400;
 const FLASH_SECTOR_SIZE = 0x1000;
-const SERIAL_FILTERS = [
-  { usbVendorId: 0x303a },
-  { usbVendorId: 0x10c4 },
-  { usbVendorId: 0x1a86 },
-  { usbVendorId: 0x0403 },
-];
 const SLIP_END = 0xc0;
 const SLIP_ESC = 0xdb;
 const SLIP_ESC_END = 0xdc;
 const SLIP_ESC_ESC = 0xdd;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-function nextBrowserPaint() {
-  if (typeof requestAnimationFrame !== "function") {
-    return sleep(0);
-  }
-  return new Promise((resolve) => {
-    requestAnimationFrame(() => setTimeout(resolve, 0));
-  });
-}
-
-async function letBrowserBreathe(delayMs = 0) {
-  if (delayMs > 0) {
-    await sleep(delayMs);
-  }
-  await nextBrowserPaint();
-}
-
-function withTimeout(promise, timeoutMs, message) {
-  let timer = null;
-  const timeout = new Promise((_, reject) => {
-    timer = setTimeout(() => reject(new Error(message)), timeoutMs);
-  });
-  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
-}
 
 function alignUp(value, alignment) {
   return Math.ceil(value / alignment) * alignment;
@@ -376,11 +346,7 @@ class InstallerUi {
 
   async showDone() {
     this.modalTitle.textContent = "Instalação concluída";
-    this.modalBody.innerHTML = `
-      <p>Host PSM instalado.</p>
-      <p>Para iniciar o Host PSM, reinicie a ESP32-S2 uma vez.</p>
-      <p><strong>No PS5:</strong><br>Wi-Fi: <strong>HostPSM</strong><br>DNS: <strong>10.1.1.1</strong><br>Abra o <strong>Guia do Usuário</strong></p>
-    `;
+    this.modalBody.innerHTML = "<p>Host PSM ESP32-S2 gravado com sucesso.</p><p>Ao reiniciar, conecte no Wi-Fi HostPSM e use o host normalmente.</p>";
     this.modalPrimary.hidden = false;
     this.modalSecondary.hidden = true;
     this.modalClose.hidden = false;
@@ -424,16 +390,9 @@ class HostPsmSerialFlasher {
 
   async openPort() {
     this.ui.updateProgress(0.08, "Selecione a porta serial da ESP32-S2.");
-    this.port = await navigator.serial.requestPort({ filters: SERIAL_FILTERS });
-    this.ui.updateProgress(0.09, "Porta selecionada. Preparando comunicação.");
-    await letBrowserBreathe(350);
+    this.port = await navigator.serial.requestPort();
     this.ui.log("Porta selecionada.");
-    await withTimeout(
-      this.port.open({ baudRate: INITIAL_BAUD, bufferSize: 65536 }),
-      5000,
-      "tempo esgotado ao abrir a porta serial"
-    );
-    await letBrowserBreathe(150);
+    await this.port.open({ baudRate: INITIAL_BAUD, bufferSize: 65536 });
     this.ui.log(`Conectado a ${INITIAL_BAUD} bps.`);
     this.reader = this.port.readable.getReader();
     this.writer = this.port.writable.getWriter();
@@ -463,13 +422,44 @@ class HostPsmSerialFlasher {
     }
   }
 
+  async setSignals(signals) {
+    if (this.port && this.port.setSignals) {
+      await this.port.setSignals(signals);
+    }
+  }
+
+  async resetToBootloader(sequence) {
+    if (sequence === 0) {
+      await this.setSignals({ dataTerminalReady: false, requestToSend: false });
+      await sleep(50);
+      await this.setSignals({ dataTerminalReady: false, requestToSend: true });
+      await sleep(100);
+      await this.setSignals({ dataTerminalReady: true, requestToSend: false });
+      await sleep(100);
+      await this.setSignals({ dataTerminalReady: false, requestToSend: false });
+      await sleep(650);
+    } else {
+      await this.setSignals({ dataTerminalReady: true, requestToSend: true });
+      await sleep(100);
+      await this.setSignals({ dataTerminalReady: false, requestToSend: true });
+      await sleep(100);
+      await this.setSignals({ dataTerminalReady: true, requestToSend: false });
+      await sleep(100);
+      await this.setSignals({ dataTerminalReady: false, requestToSend: false });
+      await sleep(850);
+    }
+  }
+
+  async resetToRun() {
+    await this.setSignals({ dataTerminalReady: false, requestToSend: true });
+    await sleep(120);
+    await this.setSignals({ dataTerminalReady: false, requestToSend: false });
+    await sleep(350);
+  }
+
   async command(command, payload = new Uint8Array(), checksum = 0, timeoutMs = 4000) {
     this.slip.clear();
-    await withTimeout(
-      this.writer.write(slipEncode(makePacket(command, payload, checksum))),
-      timeoutMs,
-      "tempo esgotado ao enviar dados para a ESP32-S2"
-    );
+    await this.writer.write(slipEncode(makePacket(command, payload, checksum)));
     const response = await this.slip.waitFor(command, timeoutMs);
     const error = command === ROM.sync ? "" : responseStatusError(response);
     if (error) {
@@ -494,15 +484,18 @@ class HostPsmSerialFlasher {
     throw new Error("não foi possível sincronizar com o bootloader da ESP32-S2");
   }
 
-  async verifyBootloader() {
-    this.ui.updateProgress(0.12, "Verificando comunicação com a ESP32-S2.");
-    try {
-      await this.sync();
-      return;
-    } catch (error) {
-      this.ui.log(error.message);
+  async enterBootloader() {
+    for (let sequence = 0; sequence < 2; sequence += 1) {
+      this.ui.updateProgress(0.12, "Entrando no modo de gravação.");
+      await this.resetToBootloader(sequence);
+      try {
+        await this.sync();
+        return;
+      } catch (error) {
+        this.ui.log(`Tentativa ${sequence + 1}: ${error.message}`);
+      }
     }
-    throw new Error("A ESP32-S2 não respondeu para gravação. Feche programas que usam a porta, coloque a placa em modo BOOT e tente novamente.");
+    throw new Error("A ESP32-S2 não respondeu em modo de gravação. Se necessário, segure BOOT ao conectar e tente novamente.");
   }
 
   async attachFlash() {
@@ -529,17 +522,14 @@ class HostPsmSerialFlasher {
       const payload = concatBytes([header, block]);
       await this.command(ROM.flashData, payload, flashChecksum(block), 8000);
       written += end - start;
-      if (sequence % 16 === 0 || sequence + 1 === blockCount) {
-        const ratio = 0.18 + ((writtenBytes + written) / totalBytes) * 0.78;
-        this.ui.updateProgress(ratio, `Gravando ${part.path} (${Math.round((written / part.bytes.length) * 100)}%).`);
-        await letBrowserBreathe();
-      }
+      const ratio = 0.18 + ((writtenBytes + written) / totalBytes) * 0.78;
+      this.ui.updateProgress(ratio, `Gravando ${part.path} (${Math.round((written / part.bytes.length) * 100)}%).`);
     }
   }
 
   async flash(parts) {
     await this.openPort();
-    await this.verifyBootloader();
+    await this.enterBootloader();
     await this.attachFlash();
 
     const totalBytes = parts.reduce((sum, part) => sum + part.bytes.length, 0);
@@ -549,11 +539,9 @@ class HostPsmSerialFlasher {
       writtenBytes += part.bytes.length;
     }
 
-    this.ui.updateProgress(0.98, "Finalizando gravação.");
-    // Mantem a ESP32-S2 no bootloader: reboot automatico via Web Serial pode
-    // derrubar/recriar a porta USB e travar o Chrome em algumas placas.
-    await this.command(ROM.flashEnd, u32Packet([1]), 0, 10000);
-    await letBrowserBreathe(500);
+    this.ui.updateProgress(0.98, "Finalizando e reiniciando a ESP32-S2.");
+    await this.command(ROM.flashEnd, u32Packet([0]), 0, 10000);
+    await this.resetToRun();
     this.ui.updateProgress(1, "Instalação concluída.");
   }
 }
@@ -573,7 +561,7 @@ async function loadManifest() {
   }
   const parts = Array.isArray(builds[0].parts) ? builds[0].parts : [];
   if (!parts.length) {
-    throw new Error("Este instalador ainda não recebeu os arquivos de firmware. Execute GERAR_HOST_INSTALLER.bat antes de publicar.");
+    throw new Error("O manifesto ainda não possui firmware. Execute GERAR_HOST_INSTALLER.bat antes de publicar.");
   }
   const normalizedParts = parts.map((part) => {
     if (!part || typeof part.path !== "string" || !Number.isInteger(part.offset)) {
@@ -605,7 +593,6 @@ async function loadFirmwareParts(ui, parts) {
     if (!bytes.length) {
       throw new Error(`arquivo de firmware vazio: ${part.path}`);
     }
-    await letBrowserBreathe();
     total += bytes.length;
     loaded.push({ ...part, bytes });
   }
@@ -620,11 +607,12 @@ async function runInstall(ui) {
       throw new Error("Web Serial exige HTTPS ou localhost. Publique no GitHub Pages ou execute em servidor local seguro.");
     }
     const manifest = await loadManifest();
+    const totalParts = manifest.parts.length;
     const choice = await ui.showChoice({
-      title: "Instalar Host PSM na ESP32-S2",
+      title: "Confirmar instalação",
       body: `
-        <p>Instalar <strong>Host PSM ${escapeHtml(manifest.version)}</strong> nesta ESP32-S2?</p>
-        <p>Mantenha a ESP32-S2 conectada ao computador até terminar.</p>
+        <p>Deseja instalar <strong>${escapeHtml(manifest.name)} ${escapeHtml(manifest.version)}</strong>?</p>
+        <p>Serão gravados somente os ${totalParts} componentes do manifesto aprovado. A NVS não será apagada.</p>
       `,
       primary: "Instalar",
       secondary: "Cancelar",
