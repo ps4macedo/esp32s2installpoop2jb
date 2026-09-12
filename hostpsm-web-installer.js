@@ -658,7 +658,7 @@ class InstallerUi {
     this.modalBody.innerHTML = `<div class="progressPanel">
       <div class="progressTop"><p id="modalMessage" role="status" aria-live="polite"></p><p id="modalPercent" hidden></p></div>
       <div id="progressShell" class="progressShell" role="progressbar" aria-label="Dados confirmados" aria-valuemin="0" aria-valuemax="100" hidden><div id="modalProgress"></div></div>
-      </div><p class="progressNote">Mantenha a <strong>ESP32-S2</strong> alimentada.</p>`;
+      </div><p class="progressNote">Não desconecte a <strong>ESP32-S2</strong> durante a instalação.</p>`;
     InstallerUi.details(`<p id="modalElapsed"></p><pre id="modalLog" class="visible"></pre>`);
     this.modalPrimary.hidden = true; this.modalClose.hidden = true;
     this.modalDiagnostic.hidden = false; this.modalDiagnostic.disabled = false; this.modalDiagnostic.textContent = "Salvar registro";
@@ -680,10 +680,10 @@ class InstallerUi {
     if (verified) {
       InstallerUi.showView("success");
       title = this.blocked ? "Instalação verificada" : "Instalação concluída";
-      body = `${this.blocked ? "" : '<p class="resultLead">Mantenha a <strong>ESP32-S2</strong> alimentada.</p>'}
-        <div class="networkDetails"><div class="networkItem"><span>Wi-Fi</span><strong>HostPSM</strong></div>
-        <div class="networkItem"><span>DNS</span><strong>10.1.1.1</strong></div></div>
-        <p class="nextStep">No PS5, abra o <strong>Guia do Usuário</strong>.</p>`;
+      body = `${this.blocked ? "" : '<p class="resultLead"><strong>ESP32-S2</strong> pronta para uso.</p><p class="ps5Label">NO PS5</p>'}
+        <div class="networkDetails"><div class="networkItem"><span>Wi-Fi</span><strong>Conecte: HostPSM</strong></div>
+        <div class="networkItem"><span>DNS</span><strong>Configure: 10.1.1.1</strong></div></div>
+        <p class="nextStep">Depois, abra o <strong>Guia do Usuário.</strong></p>`;
     } else if (!error && diagnostic) {
       InstallerUi.showView(this.blocked ? "error" : "success");
       title = this.blocked ? "Conexão pendente" : "Conexão testada";
@@ -694,7 +694,7 @@ class InstallerUi {
       body = `<p class="resultLead">${escapeHtml(InstallerUi.errorLabel(error))}</p>${flashStarted ? '<p class="resultNote">A instalação ficou incompleta. Reconecte com BOOT/B0 pressionado e instale novamente.</p>' : ""}`;
     }
     if (this.blocked) body += '<p class="resultNote">A conexão ainda não foi liberada. Reconecte a placa com BOOT liberado e recarregue esta página.</p>';
-    this.stageText.textContent = verified ? "Mantenha a ESP32-S2 alimentada." : diagnostic && !error && !this.blocked ? "Conexão USB testada." : cancelled ? "Pronto para uma nova instalação." : "Confira o resultado para continuar.";
+    this.stageText.textContent = verified ? "ESP32-S2 pronta para uso." : diagnostic && !error && !this.blocked ? "Conexão USB testada." : cancelled ? "Pronto para uma nova instalação." : "Confira o resultado para continuar.";
     this.modalTitle.textContent = title;
     this.modalBody.innerHTML = body;
     InstallerUi.details(`${error ? `<p>${escapeHtml(errorText(error))}</p>` : ""}${cleanup?.errors?.length ? `<p>${escapeHtml(cleanup.errors.join("; "))}</p>` : ""}<pre id="modalLog" class="visible"></pre>`);
