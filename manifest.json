@@ -1,6 +1,9 @@
 {
   "name": "Host PSM ESP32-S2",
   "version": "1.1.0",
+  "schema_version": 2,
+  "flash_size": 4194304,
+  "build_id": "89afed062962723814f8865065fd2104fae65f0343c63c95d485553e3864d270",
   "new_install_prompt_erase": false,
   "builds": [
     {
@@ -9,30 +12,30 @@
         {
           "path": "firmware/bootloader.bin",
           "offset": 4096,
-          "bytes": 14720,
+          "size": 14720,
           "sha256": "0b49d993df8be7cda46aba5f084ae0f0b3e8996515143383d9cce916af0545d7",
           "md5": "0627a801b7177d2ce3ec293dfad9ebc3"
         },
         {
           "path": "firmware/partitions.bin",
           "offset": 32768,
-          "bytes": 3072,
+          "size": 3072,
           "sha256": "506f27facf40db164276cb5ceb95fb5d4144b6418077cbda3d2940d920ef2110",
           "md5": "c189f206ff6f0efa4760d2cfebd21011"
         },
         {
           "path": "firmware/boot_app0.bin",
           "offset": 57344,
-          "bytes": 8192,
+          "size": 8192,
           "sha256": "f94c5d786a7a8fab06ac5d10e33bf37711a6697636dc037559ea19cc410a17f0",
           "md5": "e6327541e2dc394ca2c3b3280ac0f39f"
         },
         {
           "path": "firmware/HostPSM_ESP32S2.bin",
           "offset": 65536,
-          "bytes": 3289952,
-          "sha256": "66e0edce6c3ccbd1af7a2c071e5c0e4de6fdd5f06efeb83ee8525a4fb2dab195",
-          "md5": "7a8d46deededba617f200d2a4470d6a2"
+          "size": 3298464,
+          "sha256": "1a1a4f7f1150245b480e0b6c44e2b5e4bd54aeebb31ce63e3b470f56500d1cf2",
+          "md5": "2d08688c4adfc1e536c0b66a8de34b64"
         }
       ]
     }
