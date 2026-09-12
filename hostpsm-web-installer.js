@@ -498,6 +498,41 @@ async function loadFirmwareParts(ui, parts, signal) {
 
 const LOG_KEY = "hostpsm-web-installer-diagnostic";
 class InstallerUi {
+  // Somente apresentação: mensagens técnicas permanecem integrais no registro.
+  static showView(view, previous = false) {
+    const modal = document.getElementById("hostpsmModal");
+    if (modal) modal.dataset.view = view;
+    const icon = document.getElementById("modalStateIcon");
+    if (icon) icon.setAttribute("href", view === "success" ? "#checkIcon" : view === "error" ? "#alertIcon" : "#chipIcon");
+    const support = document.getElementById("modalSupport");
+    if (support) support.open = false;
+    const label = document.getElementById("modalSupportLabel");
+    if (label) label.textContent = view === "connect" ? "Ajuda" : "Detalhes";
+    const previousButton = document.getElementById("previousLog");
+    if (previousButton) previousButton.hidden = !previous;
+  }
+  static details(markup) {
+    const details = document.getElementById("modalDetails");
+    if (details) details.innerHTML = markup;
+  }
+  static phaseLabel(message) {
+    if (message === "Abrindo conexão USB" || message === "Confirmando modo de gravação") return "Conectando à placa";
+    if (message === "Conferindo ESP32-S2 e capacidade da flash") return "Preparando a instalação";
+    if (message.startsWith("Conferindo ")) return "Preparando os arquivos";
+    if (message.endsWith(".bin") || message.startsWith("Gravando ")) return "Gravando na placa";
+    if (message === "Verificando gravação na flash") return "Conferindo a instalação";
+    if (message === "Encerrando conexão USB") return "Finalizando";
+    return message;
+  }
+  static errorLabel(error) {
+    if (!error) return "Nada foi gravado.";
+    if (error.code === "TIMEOUT") return "A conexão não respondeu a tempo.";
+    if (error.code === "DISCONNECTED") return "A conexão USB foi interrompida.";
+    if (["MANIFEST", "DOWNLOAD", "IMAGE"].includes(error.code)) return "Não foi possível conferir os arquivos da instalação.";
+    if (error.code === "ROM_ERROR") return "A placa não permitiu continuar.";
+    if (error.code === "CANCELLED") return "A operação foi interrompida.";
+    return "Confira os detalhes e tente novamente.";
+  }
   constructor() {
     for (const id of ["installButton", "unsupportedText", "stageText", "hostpsmModal", "modalTitle", "modalBody", "modalClose", "modalPrimary", "modalSecondary", "modalDiagnostic"]) this[id] = document.getElementById(id);
     this.modal = this.hostpsmModal;
@@ -510,12 +545,12 @@ class InstallerUi {
     this.supported = Boolean(navigator.serial && window.isSecureContext && crypto.subtle);
     this.installButton.disabled = !this.supported;
     this.unsupportedText.hidden = this.supported;
-    if (!this.supported) this.stageText.textContent = "Use Chrome/Edge com HTTPS ou localhost.";
+    if (!this.supported) this.stageText.textContent = "Este navegador não permite a instalação via USB.";
     this.installButton.addEventListener("click", () => { if (!this.busy && !this.blocked) runInstall(this); });
     this.modal.addEventListener("keydown", event => {
       if (event.key === "Escape" && !this.modalClose.hidden) { event.preventDefault(); this.modalClose.click(); }
       if (event.key !== "Tab") return;
-      const buttons = [...this.modal.querySelectorAll("button:not([hidden]):not(:disabled), a[href], summary")];
+      const buttons = [...this.modal.querySelectorAll("button:not([hidden]):not(:disabled), a[href], summary")].filter(button => button.getClientRects().length > 0);
       const first = buttons[0], last = buttons[buttons.length - 1];
       if (!first) return;
       if (event.shiftKey && (document.activeElement === first || !buttons.includes(document.activeElement))) { event.preventDefault(); last.focus(); }
@@ -525,7 +560,7 @@ class InstallerUi {
   setBusy(value) {
     this.busy = value;
     this.installButton.disabled = value || !this.supported || this.blocked;
-    this.installButton.textContent = this.blocked ? "RECONECTE E RECARREGUE" : value ? "AGUARDE" : "INSTALAR";
+    this.installButton.textContent = this.blocked ? "Recarregue a página" : value ? "Aguarde" : "Instalar";
   }
   begin() {
     if (this.record) this.previous = this.record;
@@ -556,7 +591,7 @@ class InstallerUi {
     this.record.phase = message;
     this.log(`Etapa: ${message}.`);
     const node = document.getElementById("modalMessage");
-    if (node) node.textContent = message;
+    if (node) node.textContent = InstallerUi.phaseLabel(message);
     const elapsed = document.getElementById("modalElapsed");
     if (elapsed) elapsed.textContent = "Tempo nesta etapa: 0 s";
   }
@@ -569,7 +604,7 @@ class InstallerUi {
     const pct = Math.max(0, Math.min(100, ratio * 100));
     bar.style.width = `${pct.toFixed(1)}%`;
     shell.setAttribute("aria-valuenow", pct.toFixed(1));
-    text.textContent = `${label}: ${Math.floor(pct)}%${pct === 100 ? " — aguardando verificação" : ""}`;
+    text.textContent = `${Math.floor(pct)}%`;
   }
   openModal() {
     this.modal.classList.add("open"); this.modal.setAttribute("aria-hidden", "false");
@@ -587,13 +622,17 @@ class InstallerUi {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
   choosePort() {
-    this.modalTitle.textContent = "Preparar a ESP32-S2";
-    this.modalBody.innerHTML = `<ol><li>Desconecte a ESP32-S2 do USB.</li><li>Segure <strong>BOOT/B0</strong> e reconecte o cabo de dados.</li><li>Solte BOOT/B0 e selecione a porta da ESP32-S2.</li></ol>
-      <p>Mantenha o cabo conectado durante a instalação. Ao terminar, reconecte a placa com BOOT liberado.</p>
-      <p class="modalHint">“Testar conexão” apenas abre e encerra a porta, sem gravar. O teste não confirma o modo de gravação.</p>
-      ${this.previous ? '<button id="previousLog" class="textBtn" type="button">Baixar diagnóstico anterior</button>' : ""}`;
-    this.modalPrimary.textContent = "Selecionar e instalar";
+    InstallerUi.showView("connect", Boolean(this.previous));
+    InstallerUi.details("");
+    this.modalTitle.textContent = "Conectar ESP32-S2";
+    this.modalBody.innerHTML = `<div class="connectInstruction">
+      <svg class="uiIcon" aria-hidden="true"><use href="#usbIcon"/></svg>
+      <p class="instructionText">Reconecte a placa segurando <kbd>BOOT/B0</kbd>.
+      <span>Solte o botão antes de selecionar a porta.</span></p>
+    </div>`;
+    this.modalPrimary.textContent = "Selecionar porta";
     this.modalSecondary.textContent = "Cancelar";
+    this.modalSecondary.title = "";
     this.modalDiagnostic.textContent = "Testar conexão";
     for (const button of [this.modalPrimary, this.modalSecondary, this.modalDiagnostic, this.modalClose]) { button.hidden = false; button.disabled = false; }
     const pick = diagnostic => {
@@ -609,18 +648,23 @@ class InstallerUi {
     this.modalDiagnostic.onclick = () => pick(true);
     this.modalSecondary.onclick = this.modalClose.onclick = () => this.closeModal(null);
     this.openModal(); this.modalPrimary.focus();
-    document.getElementById("previousLog")?.addEventListener("click", () => this.exportLog(this.previous));
+    const previousButton = document.getElementById("previousLog");
+    if (previousButton) previousButton.onclick = () => this.exportLog(this.previous);
     return new Promise(resolve => { this.choiceResolve = resolve; });
   }
   openProgress(cancel) {
-    this.modalTitle.textContent = "Host PSM • instalação USB";
-    this.modalBody.innerHTML = `<p id="modalMessage" role="status" aria-live="polite"></p><p id="modalElapsed" class="modalHint"></p>
+    InstallerUi.showView("progress");
+    this.modalTitle.textContent = "Instalando Host PSM";
+    this.modalBody.innerHTML = `<div class="progressPanel">
+      <div class="progressTop"><p id="modalMessage" role="status" aria-live="polite"></p><p id="modalPercent" hidden></p></div>
       <div id="progressShell" class="progressShell" role="progressbar" aria-label="Dados confirmados" aria-valuemin="0" aria-valuemax="100" hidden><div id="modalProgress"></div></div>
-      <p id="modalPercent" hidden></p><p class="modalHint">Interromper durante a gravação deixa a instalação incompleta.</p><pre id="modalLog" class="visible"></pre>`;
+      </div><p class="progressNote">Mantenha a ESP32-S2 conectada.</p>`;
+    InstallerUi.details(`<p id="modalElapsed"></p><pre id="modalLog" class="visible"></pre>`);
     this.modalPrimary.hidden = true; this.modalClose.hidden = true;
-    this.modalDiagnostic.hidden = false; this.modalDiagnostic.disabled = false; this.modalDiagnostic.textContent = "Baixar diagnóstico";
+    this.modalDiagnostic.hidden = false; this.modalDiagnostic.disabled = false; this.modalDiagnostic.textContent = "Salvar registro";
     this.modalDiagnostic.onclick = () => this.exportLog();
     this.modalSecondary.hidden = false; this.modalSecondary.disabled = false; this.modalSecondary.textContent = "Interromper";
+    this.modalSecondary.title = "Se interromper durante a gravação, será necessário instalar novamente.";
     this.modalSecondary.onclick = () => { this.modalSecondary.disabled = true; this.modalSecondary.textContent = "Encerrando…"; cancel(); };
     this.openModal(); this.modalSecondary.focus();
     this.phase("Preparando instalação");
@@ -634,27 +678,32 @@ class InstallerUi {
     this.setBusy(false);
     let title, body;
     if (verified) {
-      title = this.blocked ? "Gravação verificada; conexão pendente" : "Firmware gravado e verificado";
-      body = `<p>Os quatro componentes foram conferidos na flash.</p><p><strong>Para iniciar:</strong> desconecte e reconecte a ESP32-S2 com <strong>BOOT liberado</strong>.</p>
-        <p><strong>No PS5 (FW 12.02–12.70):</strong><br>Wi-Fi: <strong>HostPSM</strong><br>DNS: <strong>10.1.1.1</strong><br>Abra o <strong>Guia do Usuário</strong>.</p>`;
+      InstallerUi.showView("success");
+      title = this.blocked ? "Instalação verificada" : "Instalação concluída";
+      body = `${this.blocked ? "" : '<p class="resultLead">Reconecte a ESP32-S2 com <strong>BOOT liberado</strong>.</p>'}
+        <div class="networkDetails"><div class="networkItem"><span>Wi-Fi</span><strong>HostPSM</strong></div>
+        <div class="networkItem"><span>DNS</span><strong>10.1.1.1</strong></div></div>
+        <p class="nextStep">No PS5, abra o <strong>Guia do Usuário</strong>.</p>`;
     } else if (!error && diagnostic) {
-      title = this.blocked ? "Conexão não encerrada" : "Teste de conexão concluído";
-      body = "<p>A abertura da porta e a criação dos streams responderam. O teste não envia comandos nem altera a flash; não confirma BOOT ou funcionamento do firmware.</p>";
+      InstallerUi.showView(this.blocked ? "error" : "success");
+      title = this.blocked ? "Conexão pendente" : "Conexão testada";
+      body = '<p class="resultLead">A conexão USB respondeu. Nada foi gravado.</p>';
     } else {
-      title = cancelled ? "Tentativa interrompida" : diagnostic ? "Teste de conexão não concluído" : "Instalação não concluída";
-      body = `<p>${escapeHtml(error ? errorText(error) : "Seleção cancelada.")}</p><p>${flashStarted ? "A flash pode estar parcialmente gravada. Prepare BOOT e execute uma instalação completa antes de usar a placa." : "Nenhuma operação de apagamento ou gravação foi enviada."}</p>`;
+      InstallerUi.showView(cancelled ? "cancelled" : "error");
+      title = cancelled ? "Instalação cancelada" : diagnostic ? "Não foi possível conectar" : "Não foi possível concluir";
+      body = `<p class="resultLead">${escapeHtml(InstallerUi.errorLabel(error))}</p>${flashStarted ? '<p class="resultNote">A instalação ficou incompleta. Reconecte com BOOT/B0 pressionado e instale novamente.</p>' : ""}`;
     }
-    if (this.blocked) body += "<p><strong>Liberação da porta não confirmada.</strong> Desconecte a ESP32-S2 e recarregue esta página antes de tentar novamente.</p>";
-    if (cleanup?.errors?.length) body += `<p class="modalHint">Encerramento: ${escapeHtml(cleanup.errors.join("; "))}</p>`;
-    this.stageText.textContent = verified ? "Firmware verificado. Reconecte a ESP com BOOT liberado." : diagnostic && !error && !this.blocked ? "Teste USB concluído; consulte o resultado." : cancelled ? "Tentativa interrompida." : "Consulte o resultado da instalação.";
+    if (this.blocked) body += '<p class="resultNote">A conexão ainda não foi liberada. Reconecte a placa com BOOT liberado e recarregue esta página.</p>';
+    this.stageText.textContent = verified ? "Reconecte a placa com BOOT liberado." : diagnostic && !error && !this.blocked ? "Conexão USB testada." : cancelled ? "Pronto para uma nova instalação." : "Confira o resultado para continuar.";
     this.modalTitle.textContent = title;
-    this.modalBody.innerHTML = body + `<details><summary>Diagnóstico da tentativa</summary><pre id="modalLog" class="visible"></pre></details>`;
+    this.modalBody.innerHTML = body;
+    InstallerUi.details(`${error ? `<p>${escapeHtml(errorText(error))}</p>` : ""}${cleanup?.errors?.length ? `<p>${escapeHtml(cleanup.errors.join("; "))}</p>` : ""}<pre id="modalLog" class="visible"></pre>`);
     document.getElementById("modalLog").textContent = this.record.events.join("\n");
     this.modalPrimary.hidden = false; this.modalPrimary.disabled = false; this.modalPrimary.textContent = "Fechar";
     this.modalPrimary.onclick = this.modalClose.onclick = () => this.closeModal();
     this.modalClose.hidden = false; this.modalClose.disabled = false;
     this.modalSecondary.hidden = true;
-    this.modalDiagnostic.hidden = false; this.modalDiagnostic.disabled = false; this.modalDiagnostic.textContent = "Baixar diagnóstico";
+    this.modalDiagnostic.hidden = false; this.modalDiagnostic.disabled = false; this.modalDiagnostic.textContent = "Salvar registro";
     this.modalDiagnostic.onclick = () => this.exportLog();
     this.openModal(); this.modalPrimary.focus();
   }
