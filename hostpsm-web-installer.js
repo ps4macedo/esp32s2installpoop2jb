@@ -563,7 +563,7 @@ class InstallerUi {
     this.modalSecondary = document.getElementById("modalSecondary");
     this.installHandler = null;
     this.modalResolve = null;
-    this.previousFocus = null;
+    this.modalReject = null;
   }
 
   start() {
@@ -593,30 +593,18 @@ class InstallerUi {
     this.stageText.textContent = message;
   }
 
-  rememberFocus() {
-    this.previousFocus = document.activeElement;
-  }
-
-  restoreFocus() {
-    if (this.previousFocus && typeof this.previousFocus.focus === "function") {
-      this.previousFocus.focus();
-    }
-    this.previousFocus = null;
-  }
-
   closeModal(result = "close") {
     this.modal.classList.remove("open");
     this.modal.setAttribute("aria-hidden", "true");
     if (this.modalResolve) {
       const resolve = this.modalResolve;
       this.modalResolve = null;
+      this.modalReject = null;
       resolve(result);
     }
-    this.restoreFocus();
   }
 
-  showChoice({ title, body, primary = "Continuar", secondary = "Cancelar" }) {
-    this.rememberFocus();
+  showChoice({ title, body, primary = "Instalar", secondary = "Cancelar", primaryAction = null }) {
     this.modalTitle.textContent = title;
     this.modalBody.innerHTML = body;
     this.modalPrimary.hidden = false;
@@ -626,113 +614,63 @@ class InstallerUi {
     this.modalSecondary.disabled = false;
     this.modalPrimary.textContent = primary;
     this.modalSecondary.textContent = secondary;
-    this.modalPrimary.onclick = () => this.closeModal("primary");
-    this.modalSecondary.onclick = () => this.closeModal("secondary");
-    this.modalClose.onclick = () => this.closeModal("close");
     this.modal.classList.add("open");
     this.modal.setAttribute("aria-hidden", "false");
-    queueMicrotask(() => this.modalPrimary.focus());
-    return new Promise((resolve) => {
-      this.modalResolve = resolve;
-    });
-  }
-
-  selectPreparedPort(version) {
-    this.rememberFocus();
-    this.modalTitle.textContent = "Preparar ESP32-S2 para gravação";
-    this.modalBody.innerHTML = `
-      <p><strong>Antes de selecionar a porta:</strong></p>
-      <ol class="prepSteps">
-        <li>Desconecte a ESP32-S2 do USB.</li>
-        <li>Mantenha <strong>BOOT/B0</strong> pressionado.</li>
-        <li>Reconecte o USB ainda segurando <strong>BOOT/B0</strong>.</li>
-        <li>Solte <strong>BOOT/B0</strong> e só então selecione a porta.</li>
-      </ol>
-      <p>Firmware: <strong>Host PSM ${escapeHtml(version)}</strong>. O instalador não tentará forçar reset automático pela USB.</p>
-    `;
-    this.modalPrimary.hidden = false;
-    this.modalSecondary.hidden = false;
-    this.modalClose.hidden = false;
-    this.modalPrimary.disabled = false;
-    this.modalSecondary.disabled = false;
-    this.modalPrimary.textContent = "Selecionar porta";
-    this.modalSecondary.textContent = "Cancelar";
-    this.modal.classList.add("open");
-    this.modal.setAttribute("aria-hidden", "false");
-    queueMicrotask(() => this.modalPrimary.focus());
 
     return new Promise((resolve, reject) => {
       let finished = false;
       const finish = (value, error = null) => {
-        if (finished) {
-          return;
-        }
+        if (finished) return;
         finished = true;
         this.modal.classList.remove("open");
         this.modal.setAttribute("aria-hidden", "true");
-        this.restoreFocus();
-        if (error) {
-          reject(error);
-        } else {
-          resolve(value);
-        }
+        this.modalResolve = null;
+        this.modalReject = null;
+        if (error) reject(error);
+        else resolve(value);
       };
+      this.modalResolve = finish;
+      this.modalReject = reject;
       this.modalPrimary.onclick = async () => {
+        if (!primaryAction) {
+          finish("primary");
+          return;
+        }
         this.modalPrimary.disabled = true;
         this.modalSecondary.disabled = true;
         try {
-          // requestPort é chamado diretamente pelo clique para preservar a ativação do usuário.
-          const port = await navigator.serial.requestPort();
-          finish(port);
+          // A escolha da porta ocorre no clique "Instalar", mantendo a ativação transitória.
+          const value = await primaryAction();
+          finish({ choice: "primary", value });
         } catch (error) {
-          if (error && error.name === "NotFoundError") {
-            finish(null);
-          } else {
-            finish(null, error);
-          }
+          if (error && error.name === "NotFoundError") finish({ choice: "cancel", value: null });
+          else finish(null, error);
         }
       };
-      this.modalSecondary.onclick = () => finish(null);
-      this.modalClose.onclick = () => finish(null);
+      this.modalSecondary.onclick = () => finish(primaryAction ? { choice: "cancel", value: null } : "secondary");
+      this.modalClose.onclick = () => finish(primaryAction ? { choice: "cancel", value: null } : "close");
     });
   }
 
-  openProgress(title, message, onCancel) {
-    this.rememberFocus();
+  openProgress(title, message) {
     this.modalTitle.textContent = title;
     this.modalBody.innerHTML = `
-      <p id="modalMessage" aria-live="polite">${escapeHtml(message)}</p>
-      <div class="progressShell" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="modalProgress"></div></div>
-      <div id="modalLog" class="visible" aria-label="Registro técnico da instalação"></div>
+      <p id="modalMessage">${escapeHtml(message)}</p>
+      <div class="progressShell"><div id="modalProgress"></div></div>
+      <div id="modalLog" class="visible"></div>
     `;
     this.modalPrimary.hidden = true;
-    this.modalSecondary.hidden = false;
+    this.modalSecondary.hidden = true;
     this.modalClose.hidden = true;
-    this.modalSecondary.disabled = false;
-    this.modalSecondary.textContent = "Cancelar";
-    this.modalSecondary.onclick = () => {
-      this.modalSecondary.disabled = true;
-      this.modalSecondary.textContent = "Interrompendo...";
-      const modalMessage = document.getElementById("modalMessage");
-      if (modalMessage) {
-        modalMessage.textContent = "Interrupção solicitada. Nenhum novo comando será iniciado.";
-      }
-      onCancel();
-    };
     this.modal.classList.add("open");
     this.modal.setAttribute("aria-hidden", "false");
   }
 
   updateProgress(ratio, message) {
     const progress = document.getElementById("modalProgress");
-    const shell = progress ? progress.parentElement : null;
     const modalMessage = document.getElementById("modalMessage");
-    const percent = Math.max(0, Math.min(100, ratio * 100));
     if (progress) {
-      progress.style.width = `${percent.toFixed(1)}%`;
-    }
-    if (shell) {
-      shell.setAttribute("aria-valuenow", percent.toFixed(0));
+      progress.style.width = `${Math.max(0, Math.min(100, ratio * 100)).toFixed(1)}%`;
     }
     if (modalMessage) {
       modalMessage.textContent = message;
@@ -741,9 +679,7 @@ class InstallerUi {
 
   log(message) {
     const log = document.getElementById("modalLog");
-    if (!log) {
-      return;
-    }
+    if (!log) return;
     log.textContent += `${message}\n`;
     const lines = log.textContent.split("\n");
     if (lines.length > MAX_LOG_LINES + 1) {
@@ -752,13 +688,11 @@ class InstallerUi {
     log.scrollTop = log.scrollHeight;
   }
 
-  async showDone({ cleanupWarning = "" } = {}) {
-    this.modalTitle.textContent = cleanupWarning ? "Gravação verificada" : "Instalação concluída";
+  async showDone() {
+    this.modalTitle.textContent = "Instalação concluída";
     this.modalBody.innerHTML = `
-      <p><strong>Firmware gravado e verificado na ESP32-S2.</strong></p>
-      ${cleanupWarning ? `<p class="warningText">${escapeHtml(cleanupWarning)}</p>` : ""}
-      <p>O instalador não reiniciou a placa automaticamente.</p>
-      <p><strong>Para iniciar o Host PSM:</strong> desconecte o USB, deixe <strong>BOOT/B0 liberado</strong> e reconecte a ESP32-S2.</p>
+      <p>Host PSM instalado.</p>
+      <p>A ESP32-S2 está pronta para uso.</p>
       <p><strong>No PS5:</strong><br>Wi-Fi: <strong>HostPSM</strong><br>DNS: <strong>10.1.1.1</strong><br>Abra o <strong>Guia do Usuário</strong></p>
     `;
     this.modalPrimary.hidden = false;
@@ -770,14 +704,13 @@ class InstallerUi {
     this.modalClose.onclick = () => this.closeModal("close");
     this.modal.classList.add("open");
     this.modal.setAttribute("aria-hidden", "false");
-    queueMicrotask(() => this.modalPrimary.focus());
     return new Promise((resolve) => {
       this.modalResolve = resolve;
     });
   }
 
   async showError(error) {
-    this.modalTitle.textContent = error instanceof CancelledError ? "Instalação interrompida" : "Instalação não concluída";
+    this.modalTitle.textContent = "Instalação não concluída";
     this.modalBody.innerHTML = `<p>${escapeHtml(error.message || error)}</p>`;
     this.modalPrimary.hidden = false;
     this.modalSecondary.hidden = true;
@@ -788,7 +721,6 @@ class InstallerUi {
     this.modalClose.onclick = () => this.closeModal("close");
     this.modal.classList.add("open");
     this.modal.setAttribute("aria-hidden", "false");
-    queueMicrotask(() => this.modalPrimary.focus());
     return new Promise((resolve) => {
       this.modalResolve = resolve;
     });
@@ -1054,7 +986,7 @@ class HostPsmSerialFlasher {
       }
     }
     throw new InstallerError(
-      `A porta abriu, mas não respondeu como bootloader da ESP32-S2. Desconecte a placa e repita a preparação com BOOT/B0. Último erro: ${lastError ? lastError.message : "sem resposta"}`,
+      "A ESP32-S2 não respondeu em modo de gravação. Se necessário, segure BOOT ao conectar e tente novamente.",
     );
   }
 
@@ -1277,22 +1209,33 @@ async function runInstall(ui) {
     const manifest = await loadManifest({ signal: controller.signal });
     journal.add(`manifesto validado: Host PSM ${manifest.version}`);
 
-    const port = await ui.selectPreparedPort(manifest.version);
-    if (!port) {
-      ui.setStage("Instalação cancelada antes da conexão.");
+    const selection = await ui.showChoice({
+      title: "Instalar Host PSM na ESP32-S2",
+      body: `
+        <p>Instalar <strong>Host PSM ${escapeHtml(manifest.version)}</strong> nesta ESP32-S2?</p>
+        <p>Mantenha a ESP32-S2 conectada ao computador até terminar.</p>
+      `,
+      primary: "Instalar",
+      secondary: "Cancelar",
+      primaryAction: () => navigator.serial.requestPort({
+        filters: [{ usbVendorId: 0x303a, usbProductId: 0x0002 }],
+      }),
+    });
+    if (!selection || selection.choice !== "primary" || !selection.value) {
+      ui.setStage("Instalação cancelada.");
       journal.add("seleção de porta cancelada; nenhuma porta foi aberta");
       return;
     }
-    let portIdentity = "VID/PID não informados pelo navegador";
-    if (typeof port.getInfo === "function") {
-      const info = port.getInfo() || {};
-      const vid = Number.isInteger(info.usbVendorId) ? `0x${info.usbVendorId.toString(16).padStart(4, "0")}` : "n/d";
-      const pid = Number.isInteger(info.usbProductId) ? `0x${info.usbProductId.toString(16).padStart(4, "0")}` : "n/d";
-      portIdentity = `VID ${vid}, PID ${pid}`;
+    const port = selection.value;
+    const info = typeof port.getInfo === "function" ? (port.getInfo() || {}) : {};
+    const vid = Number.isInteger(info.usbVendorId) ? info.usbVendorId : null;
+    const pid = Number.isInteger(info.usbProductId) ? info.usbProductId : null;
+    if (vid !== 0x303a || pid !== 0x0002) {
+      throw new InstallerError("A porta selecionada não corresponde à interface USB esperada da ESP32-S2.");
     }
-    journal.add(`porta selecionada (${portIdentity}); mantida fechada durante a validação dos arquivos; VID/PID não são usados como prova de modo bootloader`);
+    journal.add("porta ESP32-S2 selecionada; mantida fechada durante a validação dos arquivos");
 
-    ui.openProgress("Instalando Host PSM", "Validando firmware antes de abrir a porta.", () => controller.abort());
+    ui.openProgress("Instalando Host PSM", "Carregando firmware local.");
     const parts = await loadFirmwareParts(ui, manifest.parts, { signal: controller.signal, journal });
     throwIfAborted(controller.signal);
 
@@ -1306,34 +1249,20 @@ async function runInstall(ui) {
     if (!flasher.allVerified) {
       throw new InstallerError("A instalação terminou sem confirmação completa da flash.");
     }
-    if (cleanup.closed) {
-      ui.updateProgress(1, "Firmware gravado, verificado e conexão encerrada.");
-      ui.setStage("Host PSM gravado e verificado.");
-      await ui.showDone();
-    } else {
-      ui.setStage("Host PSM gravado e verificado; conexão requer recuperação física.");
-      await ui.showDone({
-        cleanupWarning: "A gravação foi verificada, mas o navegador não confirmou o encerramento da porta. Desconecte fisicamente a ESP32-S2 antes de fechar esta tela.",
-      });
-    }
+    ui.updateProgress(1, "Concluído.");
+    ui.setStage("Host PSM instalado com sucesso.");
+    await ui.showDone();
   } catch (error) {
     if (flasher && flasher.state !== "closed" && flasher.state !== "closed-uncertain") {
       cleanup = await flasher.closePort();
     }
-    const cleanupSuffix = cleanup && cleanup.closed === false
-      ? " A conexão serial também não teve o encerramento confirmado. Desconecte fisicamente a ESP32-S2 antes de tentar novamente."
+    ui.setStage("Instalação não concluída.");
+    journal.add(`falha: ${error && error.message ? error.message : error}`);
+    const base = error instanceof Error ? error.message : String(error);
+    const suffix = cleanup && cleanup.closed === false
+      ? " Desconecte fisicamente a ESP32-S2 antes de tentar novamente."
       : "";
-    if (error instanceof CancelledError || controller.signal.aborted) {
-      ui.setStage("Instalação interrompida.");
-      journal.add("instalação interrompida pelo usuário");
-      const base = error instanceof CancelledError ? error.message : "Instalação interrompida.";
-      await ui.showError(new CancelledError(base + cleanupSuffix));
-    } else {
-      ui.setStage("Instalação não concluída.");
-      journal.add(`falha: ${error && error.message ? error.message : error}`);
-      const base = error instanceof Error ? error.message : String(error);
-      await ui.showError(new InstallerError(base + cleanupSuffix));
-    }
+    await ui.showError(new InstallerError(base + suffix));
   } finally {
     ui.setBusy(false);
   }

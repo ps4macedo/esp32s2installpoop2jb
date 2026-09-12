@@ -30,9 +30,9 @@
         {
           "path": "firmware/HostPSM_ESP32S2.bin",
           "offset": 65536,
-          "bytes": 3298464,
-          "sha256": "1a1a4f7f1150245b480e0b6c44e2b5e4bd54aeebb31ce63e3b470f56500d1cf2",
-          "md5": "2d08688c4adfc1e536c0b66a8de34b64"
+          "bytes": 3289952,
+          "sha256": "66e0edce6c3ccbd1af7a2c071e5c0e4de6fdd5f06efeb83ee8525a4fb2dab195",
+          "md5": "7a8d46deededba617f200d2a4470d6a2"
         }
       ]
     }
