@@ -503,7 +503,7 @@ class InstallerUi {
     const modal = document.getElementById("hostpsmModal");
     if (modal) modal.dataset.view = view;
     const icon = document.getElementById("modalStateIcon");
-    if (icon) icon.setAttribute("href", view === "success" ? "#checkIcon" : view === "error" ? "#alertIcon" : "#chipIcon");
+    if (icon) icon.setAttribute("href", view === "error" ? "#alertIcon" : "#chipIcon");
     const support = document.getElementById("modalSupport");
     if (support) support.open = false;
     const label = document.getElementById("modalSupportLabel");
@@ -680,7 +680,7 @@ class InstallerUi {
     if (verified) {
       InstallerUi.showView("success");
       title = this.blocked ? "Instalação verificada" : "Instalação concluída";
-      body = `${this.blocked ? "" : '<p class="resultLead">Reconecte a ESP32-S2 com <strong>BOOT liberado</strong>.</p>'}
+      body = `${this.blocked ? "" : '<p class="resultLead">Mantenha a <strong>ESP32-S2</strong> alimentada.</p>'}
         <div class="networkDetails"><div class="networkItem"><span>Wi-Fi</span><strong>HostPSM</strong></div>
         <div class="networkItem"><span>DNS</span><strong>10.1.1.1</strong></div></div>
         <p class="nextStep">No PS5, abra o <strong>Guia do Usuário</strong>.</p>`;
@@ -694,7 +694,7 @@ class InstallerUi {
       body = `<p class="resultLead">${escapeHtml(InstallerUi.errorLabel(error))}</p>${flashStarted ? '<p class="resultNote">A instalação ficou incompleta. Reconecte com BOOT/B0 pressionado e instale novamente.</p>' : ""}`;
     }
     if (this.blocked) body += '<p class="resultNote">A conexão ainda não foi liberada. Reconecte a placa com BOOT liberado e recarregue esta página.</p>';
-    this.stageText.textContent = verified ? "Reconecte a placa com BOOT liberado." : diagnostic && !error && !this.blocked ? "Conexão USB testada." : cancelled ? "Pronto para uma nova instalação." : "Confira o resultado para continuar.";
+    this.stageText.textContent = verified ? "Mantenha a ESP32-S2 alimentada." : diagnostic && !error && !this.blocked ? "Conexão USB testada." : cancelled ? "Pronto para uma nova instalação." : "Confira o resultado para continuar.";
     this.modalTitle.textContent = title;
     this.modalBody.innerHTML = body;
     InstallerUi.details(`${error ? `<p>${escapeHtml(errorText(error))}</p>` : ""}${cleanup?.errors?.length ? `<p>${escapeHtml(cleanup.errors.join("; "))}</p>` : ""}<pre id="modalLog" class="visible"></pre>`);
