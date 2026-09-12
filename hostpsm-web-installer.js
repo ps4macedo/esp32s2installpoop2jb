@@ -658,7 +658,7 @@ class InstallerUi {
     this.modalBody.innerHTML = `<div class="progressPanel">
       <div class="progressTop"><p id="modalMessage" role="status" aria-live="polite"></p><p id="modalPercent" hidden></p></div>
       <div id="progressShell" class="progressShell" role="progressbar" aria-label="Dados confirmados" aria-valuemin="0" aria-valuemax="100" hidden><div id="modalProgress"></div></div>
-      </div><p class="progressNote">Mantenha a ESP32-S2 conectada.</p>`;
+      </div><p class="progressNote">Mantenha a <strong>ESP32-S2</strong> alimentada.</p>`;
     InstallerUi.details(`<p id="modalElapsed"></p><pre id="modalLog" class="visible"></pre>`);
     this.modalPrimary.hidden = true; this.modalClose.hidden = true;
     this.modalDiagnostic.hidden = false; this.modalDiagnostic.disabled = false; this.modalDiagnostic.textContent = "Salvar registro";
