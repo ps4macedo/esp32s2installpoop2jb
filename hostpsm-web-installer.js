@@ -346,7 +346,11 @@ class InstallerUi {
 
   async showDone() {
     this.modalTitle.textContent = "Instalação concluída";
-    this.modalBody.innerHTML = "<p>Host PSM ESP32-S2 gravado com sucesso.</p><p>Ao reiniciar, conecte no Wi-Fi HostPSM e use o host normalmente.</p>";
+    this.modalBody.innerHTML = `
+      <p>Host PSM instalado.</p>
+      <p>A ESP32-S2 está pronta para uso.</p>
+      <p><strong>No PS5:</strong><br>Wi-Fi: <strong>HostPSM</strong><br>DNS: <strong>10.1.1.1</strong><br>Abra o <strong>Guia do Usuário</strong></p>
+    `;
     this.modalPrimary.hidden = false;
     this.modalSecondary.hidden = true;
     this.modalClose.hidden = false;
@@ -561,7 +565,7 @@ async function loadManifest() {
   }
   const parts = Array.isArray(builds[0].parts) ? builds[0].parts : [];
   if (!parts.length) {
-    throw new Error("O manifesto ainda não possui firmware. Execute GERAR_HOST_INSTALLER.bat antes de publicar.");
+    throw new Error("Este instalador ainda não recebeu os arquivos de firmware. Execute GERAR_HOST_INSTALLER.bat antes de publicar.");
   }
   const normalizedParts = parts.map((part) => {
     if (!part || typeof part.path !== "string" || !Number.isInteger(part.offset)) {
@@ -607,12 +611,11 @@ async function runInstall(ui) {
       throw new Error("Web Serial exige HTTPS ou localhost. Publique no GitHub Pages ou execute em servidor local seguro.");
     }
     const manifest = await loadManifest();
-    const totalParts = manifest.parts.length;
     const choice = await ui.showChoice({
-      title: "Confirmar instalação",
+      title: "Instalar Host PSM na ESP32-S2",
       body: `
-        <p>Deseja instalar <strong>${escapeHtml(manifest.name)} ${escapeHtml(manifest.version)}</strong>?</p>
-        <p>Serão gravados somente os ${totalParts} componentes do manifesto aprovado. A NVS não será apagada.</p>
+        <p>Instalar <strong>Host PSM ${escapeHtml(manifest.version)}</strong> nesta ESP32-S2?</p>
+        <p>Mantenha a ESP32-S2 conectada ao computador até terminar.</p>
       `,
       primary: "Instalar",
       secondary: "Cancelar",

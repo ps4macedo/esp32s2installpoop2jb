@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#000207">
 <title>Host PSM • ESP32-S2</title>
-<script type="module" src="esp-web-tools/install-button.js"></script>
+<script type="module" src="hostpsm-web-installer.js"></script>
 <style>
 *{box-sizing:border-box}
 html,body{width:100%;height:100%;margin:0;overflow:hidden;font-family:Arial,Helvetica,sans-serif;color:#f4f7fb}
 html{background:#000207}
-body{background-color:#000207;background-image:radial-gradient(ellipse at 50% 48%,#0a1c31 0%,#03101e 40%,#01050d 72%,#000104 100%);color-scheme:dark;--md-sys-color-surface:#151b24;--md-sys-color-surface-container:#111820;--md-sys-color-surface-container-high:#182231;--md-sys-color-surface-container-highest:#202b39;--md-sys-color-on-surface:#edf4fb;--md-sys-color-on-surface-variant:#a9b8c7;--md-sys-color-primary:#7cc7ff;--md-sys-color-on-primary:#06111e;--md-sys-color-secondary-container:#10263c;--md-sys-color-on-secondary-container:#dcecff;--md-sys-color-outline:#4f6880;--md-sys-color-error:#ff6b78;--md-dialog-container-color:#151b24;--md-dialog-headline-color:#f5f8fb;--md-dialog-supporting-text-color:#dbe5ef;--md-text-button-label-text-color:#7cc7ff;--text-color:#edf4fb;--danger-color:#ff6b78}
+body{background-color:#000207;background-image:radial-gradient(ellipse at 50% 48%,#0a1c31 0%,#03101e 40%,#01050d 72%,#000104 100%)}
 #root{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0}
 #screenAura{position:absolute;left:230px;top:80px;width:820px;height:560px;border-radius:50%;background:radial-gradient(ellipse at 50% 50%,rgba(25,98,177,.16) 0%,rgba(8,36,73,.07) 47%,rgba(0,0,0,0) 74%)}
 #panel{position:absolute;left:320px;top:180px;width:640px;height:360px;overflow:hidden;border:1px solid #36556f;border-radius:18px;background-color:#030911;background-image:linear-gradient(to bottom,#0b1827 0%,#06111e 42%,#02070d 100%);box-shadow:0 26px 58px rgba(0,0,0,.82),0 0 20px rgba(27,107,189,.20),inset 0 1px 0 rgba(255,255,255,.10),inset 0 -1px 0 rgba(37,105,161,.23)}
@@ -35,13 +35,30 @@ body{background-color:#000207;background-image:radial-gradient(ellipse at 50% 48
 #stageRule{position:absolute;left:180px;right:180px;top:84px;height:1px;background:#28536f;opacity:.52}
 #stageText{position:absolute;left:32px;right:32px;top:99px;text-align:center;font-size:11px;line-height:1.45;color:#aab6c1;white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.9)}
 #installWrap{position:absolute;left:110px;right:110px;top:126px;height:44px}
-esp-web-install-button{display:block;width:100%;height:100%}
 .installBtn{appearance:none;-webkit-appearance:none;width:100%;height:44px;border:1px solid #4baee9;border-radius:12px;background-color:#081726;background-image:linear-gradient(to bottom,#123457 0%,#0b2845 48%,#06111e 100%);color:#f8fbff;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:800;letter-spacing:1.1px;text-transform:uppercase;cursor:pointer;box-shadow:0 0 0 2px rgba(56,136,224,.10),0 0 10px rgba(75,181,249,.42),0 0 20px rgba(35,119,225,.22),inset 0 1px 0 rgba(255,255,255,.16),inset 0 -1px 0 rgba(20,82,130,.35);text-shadow:0 1px 2px rgba(0,0,0,.88);transition:filter .14s ease,transform .14s ease,border-color .14s ease}
 .installBtn:hover{filter:brightness(1.09);border-color:#74c8fb;transform:translateY(-1px)}
 .installBtn:active{transform:translateY(0);filter:brightness(.98)}
+.installBtn:disabled{cursor:not-allowed;filter:grayscale(.35) brightness(.78);transform:none}
 .unsupported{position:absolute;left:-70px;right:-70px;top:48px;color:#efbd67;font-size:9px;line-height:1.35;text-align:center;letter-spacing:.2px}
 #footer{position:absolute;left:75px;top:317px;width:490px;height:25px;border-top:1px solid #23445b;background-color:rgba(3,10,18,.20)}
 #footerText{position:absolute;left:0;right:0;top:8px;text-align:center;font-size:8.6px;font-weight:600;letter-spacing:2.2px;color:#7f909e;white-space:nowrap;text-shadow:0 2px 3px rgba(0,0,0,.92)}
+#hostpsmModal{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,2,7,.64);backdrop-filter:blur(2px)}
+#hostpsmModal.open{display:flex}
+.modalCard{width:min(448px,calc(100vw - 26px));max-height:calc(100vh - 26px);overflow:hidden;border:1px solid #3c4654;border-radius:10px;background:#191d22;color:#f4f7fb;box-shadow:0 22px 54px rgba(0,0,0,.62),0 0 0 1px rgba(255,255,255,.045)}
+.modalHead{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:22px 24px 10px}
+#modalTitle{margin:0;color:#f7f8fb;font-size:20px;font-weight:700;line-height:1.24}
+#modalClose{appearance:none;border:0;background:transparent;color:#bfc7d1;font-size:28px;line-height:24px;cursor:pointer;padding:0 0 0 8px}
+#modalClose:hover{color:#fff}
+#modalBody{padding:0 24px 16px;color:#d8dde5;font-size:14px;line-height:1.52}
+#modalBody p{margin:9px 0}
+.progressShell{height:9px;margin:16px 0 10px;border:1px solid #46576a;background:#10151b}
+#modalProgress{height:100%;width:0;background:linear-gradient(to right,#86b4ff,#2d6eb8);transition:width .16s ease}
+#modalLog{display:none;max-height:176px;margin-top:12px;padding:10px;border:1px solid #3a4654;background:#101419;color:#cbd6e2;font-family:Consolas,monospace;font-size:11px;line-height:1.45;white-space:pre-wrap;overflow:auto}
+#modalLog.visible{display:block}
+.modalActions{display:flex;justify-content:flex-end;gap:10px;padding:0 24px 24px}
+.modalBtn{appearance:none;min-width:86px;height:38px;border-radius:18px;border:1px solid #2e64ad;background:#214f94;color:#f5f8ff;font-size:13px;font-weight:700;cursor:pointer;padding:0 18px}
+.modalBtn.secondary{border-color:#586270;background:#20252b;color:#dde5ee}
+.modalBtn:disabled{opacity:.56;cursor:not-allowed}
 </style>
 </head>
 <body>
@@ -67,16 +84,27 @@ esp-web-install-button{display:block;width:100%;height:100%}
       <div id="stageLabel">INSTALAÇÃO VIA USB</div>
       <div id="stageTitle">INSTALAR NA ESP32-S2</div>
       <div id="stageRule"></div>
-      <div id="stageText">Pronto para instalar o Host PSM na ESP32-S2.</div>
+      <div id="stageText">Conecte sua ESP32-S2 ao computador.</div>
       <div id="installWrap">
-        <esp-web-install-button manifest="manifest.json">
-          <button slot="activate" class="installBtn">INSTALAR</button>
-          <div slot="unsupported" class="unsupported">Use Chrome ou Edge compatível.</div>
-        </esp-web-install-button>
+        <button id="installButton" class="installBtn" type="button">INSTALAR</button>
+        <div id="unsupportedText" class="unsupported" hidden>Use Chrome ou Edge compatível com Web Serial.</div>
       </div>
     </div>
 
     <div id="footer"><div id="footerText">HOST PSM • ESP32-S2</div></div>
+  </div>
+</div>
+<div id="hostpsmModal" aria-hidden="true">
+  <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modalHead">
+      <h2 id="modalTitle">Host PSM ESP32-S2</h2>
+      <button id="modalClose" type="button" aria-label="Fechar">×</button>
+    </div>
+    <div id="modalBody"></div>
+    <div class="modalActions">
+      <button id="modalSecondary" class="modalBtn secondary" type="button">Cancelar</button>
+      <button id="modalPrimary" class="modalBtn" type="button">Instalar</button>
+    </div>
   </div>
 </div>
 <script>
