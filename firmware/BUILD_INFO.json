@@ -1,9 +1,9 @@
 {
   "target": "ESP32-S2",
-  "build_id": "f3f5527dbd8a852278090ff1cb0870abf350d0fafece0682639268e7b9356896",
+  "build_id": "4c172577accf9a3fa154e702c341a31906a6e08afaf8c5a7e6a8d6053a93b104",
   "configured_flash_bytes": 4194304,
-  "published_binary_bytes": 3324464,
-  "not_published_bytes_vs_4MiB": 869840,
+  "published_binary_bytes": 3324432,
+  "not_published_bytes_vs_4MiB": 869872,
   "nvs_in_manifest": false,
   "nvs_range": "0x9000-0xDFFF",
   "parts": [
@@ -24,8 +24,8 @@
     },
     {
       "file": "HostPSM_ESP32S2.bin",
-      "bytes": 3298480,
-      "sha256": "4186ce7028b70e50c1b91d9e0501fdbfc210e1aed7dc7b9dba1893418650aa4e"
+      "bytes": 3298448,
+      "sha256": "cc5e3d349af7f75e849ab9957fed2d0b1876a9d86d100e9fb1047567c1d3e799"
     }
   ]
 }
